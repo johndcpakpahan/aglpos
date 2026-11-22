@@ -38,7 +38,7 @@ const rp=n=>'Rp '+(+n||0).toLocaleString('id-ID');
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Jakarta'});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const POT={default:'Default',paha_atas:'Paha Atas',paha_bawah:'Paha Bawah',dada:'Dada',sayap:'Sayap'};
-const S={view:'boot',email:'',menu:[],orders:[],cash:null,tab:'aktif',lay:localStorage.getItem('lay')||'list',cat:'ayam',cart:{},f:{tipe:'dine_in',meja:'',untuk:'customer',nama:'',umum:''},cs:'',ce:'',pot:null,busy:false,err:'',modal:0};
+const S={view:'boot',email:'',menu:[],orders:[],cash:null,tab:'aktif',lay:localStorage.getItem('lay')||'list',cat:'ayam',cart:{},f:{tipe:'dine_in',meja:'',untuk:'customer',nama:'',umum:''},cs:'',ce:'',pot:null,cn:null,busy:false,err:'',modal:0};
 const q=c=>Object.values((S.cart[c]||{}).g||{}).reduce((a,b)=>a+b,0);
 const cnt=()=>Object.keys(S.cart).reduce((a,c)=>a+q(c),0);
 const nm=c=>(S.menu.find(x=>x.code===c)||{}).name||c;
@@ -49,6 +49,13 @@ const tot=o=>isSt(o)?0:o.order_items.reduce((a,i)=>a+i.qty*i.unit_price,0);
 const summ=o=>{const m={};o.order_items.forEach(i=>m[i.menu_code]=(m[i.menu_code]||0)+i.qty);return Object.entries(m).map(([c,n])=>n+'× '+nm(c)).join(', ')};
 const mins=o=>Math.max(0,Math.round((Date.now()-new Date(o.created_at))/60000))+' mnt';
 const potTxt=g=>Object.entries(g).filter(([,n])=>n>0).map(([k,n])=>POT[k]+' ×'+n).join(', ');
+const ell='min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+const NOTE_CHIPS=['Sambal dipisah','Tanpa timun','Tanpa lalapan','Pedas level 3'];
+const potShort=g=>Object.entries(g).filter(([k,n])=>k!=='default'&&n>0).map(([k,n])=>n+' '+POT[k]).join(', ');
+const itemsHtml=o=>{const m={};o.order_items.forEach(i=>{const e=m[i.menu_code]||(m[i.menu_code]={n:0,g:{},note:''});e.n+=i.qty;e.g[i.potongan]=(e.g[i.potongan]||0)+i.qty;if(i.note&&!e.note)e.note=i.note});
+ const rows=Object.entries(m).map(([c,e])=>{const hasP=Object.keys(e.g).some(k=>k!=='default'&&e.g[k]>0),pt=hasP?Object.entries(e.g).filter(([,n])=>n>0).map(([k,n])=>n+' '+(POT[k]||k)).join(', '):'',det=[pt?'Potongan: '+pt:'',e.note?'Catatan: '+e.note:''].filter(Boolean).join(' · ');
+  return `<div style="margin-top:6px"><b style="font-size:17px">${e.n}× ${esc(c)}</b>${det?`<p class="sub" style="margin:0">${esc(det)}</p>`:''}</div>`}).join('');
+ return rows+(o.general_note?`<p class="sub" style="margin:6px 0 0">Catatan umum: ${esc(o.general_note)}</p>`:'')};
 const nonDef=g=>Object.entries(g).filter(([k,n])=>k!=='default'&&n>0).length;
 const logo='<img src="logo.png" alt="Ayam Geprek Langganan" style="width:200px;height:auto;display:block;margin:0 auto">';
 const ctr='display:flex;flex-direction:column;justify-content:center;gap:28px;padding:0 24px';
@@ -59,13 +66,13 @@ const vLogin=()=>`<div class="sc" style="${ctr}">${logo}<div class="card" style=
 const vBuka=()=>`<div class="sc" style="${ctr}">${logo}<div><h1>Buka Kasir</h1><p class="sub">${new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'})}</p></div><div class="card"><label class="lbl" for="cs">Jumlah cash di awal hari:</label><input class="in" id="cs" data-cash="cs" inputmode="numeric" placeholder="Rp 0" value="${S.cs?rp(S.cs):''}" style="${big}"></div></div><div class="bot"><button class="btn" data-a="mulai" ${S.busy?'disabled':''}>Mulai hari</button></div>`;
 function vAntrean(){
  const L=S.orders.filter(o=>o.status==='active'),A=L.filter(aktif),D=L.filter(o=>!aktif(o)).reverse(),X=S.tab==='aktif'?A:D;
- const card=o=>`<div class="card"><div class="r"><b class="ttl">${ic(o.order_type==='dine_in'?'dine':'bag')}${esc(label(o))}</b>${isSt(o)?`<span class="pill">${ic('user')}Staff</span>`:`<span class="sub" style="display:flex;align-items:center;gap:4px">${ic('clock')}${mins(o)}</span>`}</div><p class="sub" style="margin-top:4px">${esc(summ(o))}</p><div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${isSt(o)?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}</div></div>`;
+ const card=o=>`<div class="card"><div class="r"><b class="ttl">${ic(o.order_type==='dine_in'?'dine':'bag')}${esc(label(o))}</b>${isSt(o)?`<span class="pill">${ic('user')}Staff</span>`:`<span class="sub" style="display:flex;align-items:center;gap:4px">${ic('clock')}${mins(o)}</span>`}</div><div style="margin-top:2px">${itemsHtml(o)}</div><div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${isSt(o)?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}</div></div>`;
  return `<div class="hd"><div><h1>Antrean</h1><p class="sub">${A.length} pesanan aktif</p></div><button class="lnk" data-a="tutup">${ic('lock')}Tutup kasir</button></div><div class="bd sc"><div class="seg"><button class="${S.tab==='aktif'?'on':''}" data-a="tab" data-v="aktif">Aktif (${A.length})</button><button class="${S.tab==='selesai'?'on':''}" data-a="tab" data-v="selesai">Selesai</button></div>${X.map(card).join('')||'<p class="sub">Belum ada pesanan.</p>'}</div><div class="bot"><button class="btn" data-a="baru">${ic('plus')}Pesanan baru</button><button class="lnk" data-a="logout" style="margin:6px auto 0;min-height:36px;font-size:14px">Keluar (${esc(S.email)})</button></div>`}
 function vMenu(){
  const M=S.menu.filter(m=>m.category===S.cat);
  const stp=(c,n)=>`<div class="stp"><button data-a="add" data-c="${c}" data-d="-1" aria-label="Kurangi ${esc(nm(c))}">${ic('minus')}</button><span>${n}</span><button data-a="add" data-c="${c}" data-d="1" aria-label="Tambah ${esc(nm(c))}">${ic('plus')}</button></div>`;
  const name=m=>`<b style="font-size:17px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(m.name)}</b>`;
- const btns=(m,g)=>{const it=S.cart[m.code],st=g?'aria-label="%" style="justify-content:center;padding:0"':'';return `<div style="display:flex;gap:6px">${m.has_potongan?`<button class="nt" data-a="pot" data-c="${m.code}" ${st.replace('%','Potongan')}>${ic('drum')}${g?'':'Potongan: '+(nonDef(it.g)?nonDef(it.g)+' jenis':'Default')}</button>`:''}<button class="nt" data-a="note" data-c="${m.code}" ${st.replace('%','Catatan')}>${ic('note')}${g?'':(esc(it.note)||'+ Catatan')}</button></div>`};
+ const btns=(m,g)=>{const it=S.cart[m.code],st=g?'aria-label="%" style="justify-content:center;padding:0"':'';return `<div style="display:flex;gap:6px">${m.has_potongan?`<button class="nt" data-a="pot" data-c="${m.code}" ${st.replace('%','Potongan')}>${ic('drum')}${g?'':`<span style="${ell}">${esc(potShort(it.g)||'Tidak ada request')}</span>`}</button>`:''}<button class="nt" data-a="note" data-c="${m.code}" ${st.replace('%','Catatan')}>${ic('note')}${g?'':`<span style="${ell}">${esc(it.note)||'+ Catatan'}</span>`}</button></div>`};
  const li=m=>{const n=q(m.code);return `<div class="mc${n?' on':''}"><div class="r" style="gap:10px"><div style="flex:1;min-width:0">${name(m)}</div><div style="flex:none">${stp(m.code,n)}</div></div>${n?btns(m,0):''}</div>`};
  const gi=m=>{const n=q(m.code);return `<div class="mc${n?' on':''}" style="padding:10px"><div style="min-height:41px">${name(m)}</div>${stp(m.code,n)}${n?btns(m,1):''}</div>`};
  const body=[...new Set(M.map(m=>m.group_label))].map(gl=>{const l=M.filter(m=>m.group_label===gl);return (gl?`<div class="sec">${ic(gl==='Paket nasi'?'bowl':'drum')}${esc(gl)}</div>`:'')+(S.lay==='grid'?`<div class="grid">${l.map(gi).join('')}</div>`:`<div class="col">${l.map(li).join('')}</div>`)}).join('');
@@ -82,8 +89,11 @@ function vPot(){
  const p=S.pot,t=q(p.c),rem=t-Object.values(p.g).reduce((a,b)=>a+b,0);
  const rows=Object.keys(POT).filter(k=>k!=='default').map(k=>`<div class="r" style="min-height:52px;border-top:1px solid #DBC4A0"><span>${POT[k]}</span><div class="stp"><button data-a="potd" data-k="${k}" data-d="-1" aria-label="Kurangi ${POT[k]}">${ic('minus')}</button><span>${p.g[k]||0}</span><button data-a="potd" data-k="${k}" data-d="1" ${rem<=0?'disabled':''} aria-label="Tambah ${POT[k]}">${ic('plus')}</button></div></div>`).join('');
  return `<div style="position:fixed;inset:0;background:rgba(72,65,73,.6);z-index:8;display:flex;align-items:flex-end;justify-content:center"><div class="card" style="width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom))"><b class="ttl" style="font-size:22px">${ic('drum')}Potongan</b><p class="sub" style="margin:4px 0 10px">${esc(nm(p.c))} · ${t} porsi. Sisa porsi otomatis menjadi Default.</p><div class="r" style="min-height:52px;border-top:1px solid #DBC4A0"><span class="sub">Default (otomatis)</span><b style="font-size:21px;min-width:44px;text-align:center">${rem}</b></div>${rows}<button class="btn" data-a="potsave" style="margin-top:14px">${ic('chk')}Simpan</button></div></div>`}
+function vCat(){const p=S.cn,sel=p.v.split(',').map(x=>x.trim()).filter(Boolean);
+ const chips=NOTE_CHIPS.map((t,i)=>{const on=sel.includes(t);return `<button class="${on?'pill':'nt'}" data-a="chip" data-i="${i}" aria-pressed="${on}" style="min-height:44px;border:${on?'0':'1px dashed #8A7E73'};border-radius:99px;padding:0 14px;font:600 15px 'Barlow Condensed',sans-serif;flex:none">${esc(t)}</button>`}).join('');
+ return `<div style="position:fixed;inset:0;z-index:8;display:flex;align-items:flex-end;justify-content:center"><div data-a="notex" style="position:absolute;inset:0;background:rgba(72,65,73,.6)"></div><div class="card" style="position:relative;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom))"><b class="ttl" style="font-size:22px">${ic('note')}Catatan</b><p class="sub" style="margin:4px 0 10px">${esc(nm(p.c))}</p><textarea class="in" id="cn" data-cn="1" aria-label="Catatan pesanan" placeholder="Tulis catatan untuk dapur" style="height:88px;padding:10px 14px;resize:none;display:block">${esc(p.v)}</textarea><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${chips}</div><button class="btn" data-a="notesave" style="margin-top:14px">${ic('chk')}Simpan</button></div></div>`}
 function render(){const sc=$('.sc'),y=sc?sc.scrollTop:0,V={login:vLogin,buka:vBuka,antrean:vAntrean,menu:vMenu,ringkas:vRingkas,tutup:vTutup,ditutup:vDitutup};
- $('#app').innerHTML=S.view==='boot'?'<p class="sub" style="padding:40px">Memuat…</p>':V[S.view]()+(S.pot?vPot():'');const n=$('.sc');if(n)n.scrollTop=y}
+ $('#app').innerHTML=S.view==='boot'?'<p class="sub" style="padding:40px">Memuat…</p>':V[S.view]()+(S.pot?vPot():'')+(S.cn?vCat():'');const n=$('.sc');if(n)n.scrollTop=y}
 function go(v){S.view=v;render();const n=$('.sc');if(n)n.scrollTop=0}
 function ask(t,s,y,inp,num){return new Promise(res=>{const m=$('#md');m.innerHTML=`<div class="card"><b style="font-size:22px">${esc(t)}</b>${s?`<p class="sub">${esc(s)}</p>`:''}${inp!=null?`<input class="in" id="mi" ${num?'data-num="1" inputmode="numeric"':''} value="${num&&inp!==''?rp(inp):esc(inp)}">`:''}<div class="seg"><button data-m="0">Batal</button><button class="pri" data-m="1">${esc(y||'Ya')}</button></div></div>`;m.classList.add('show');S.modal=1;
  m.onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;const ok=b.dataset.m==='1',v=inp!=null?(ok?(num?$('#mi').value.replace(/\D/g,''):$('#mi').value):null):ok;m.classList.remove('show');m.innerHTML='';S.modal=0;res(v)};if(inp!=null)$('#mi').focus()})}
@@ -158,7 +168,10 @@ document.addEventListener('click',async e=>{
  else if(a==='pot'){const g={},it=S.cart[d.c];for(const k in it.g)if(k!=='default'&&it.g[k]>0)g[k]=it.g[k];S.pot={c:d.c,g};render()}
  else if(a==='potd'){const g=S.pot.g,cur=g[d.k]||0,rem=q(S.pot.c)-Object.values(g).reduce((x,y)=>x+y,0),dd=+d.d;if((dd>0&&rem<=0)||(dd<0&&cur<=0))return;g[d.k]=cur+dd;render()}
  else if(a==='potsave'){const c=S.pot.c,g=S.pot.g,t=q(c),o=Object.values(g).reduce((x,y)=>x+y,0),n={};if(t-o>0)n.default=t-o;for(const k in g)if(g[k]>0)n[k]=g[k];S.cart[c].g=n;S.pot=null;render()}
- else if(a==='note'){const it=S.cart[d.c],v=await ask('Catatan',nm(d.c),'Simpan',it.note||'');if(v!==null){it.note=v.trim();render()}}
+ else if(a==='note'){S.cn={c:d.c,v:S.cart[d.c].note||''};render()}
+ else if(a==='chip'){const t=NOTE_CHIPS[+d.i],l=S.cn.v.split(',').map(x=>x.trim()).filter(Boolean),k=l.indexOf(t);if(k>=0)l.splice(k,1);else l.push(t);S.cn.v=l.join(', ');render()}
+ else if(a==='notesave'){S.cart[S.cn.c].note=S.cn.v.trim();S.cn=null;render()}
+ else if(a==='notex'){S.cn=null;render()}
  else if(a==='lanjut')go('ringkas');
  else if(a==='tipe'||a==='untuk'){S.f[a]=d.v;render()}
  else if(a==='simpan')simpan();
@@ -171,7 +184,7 @@ document.addEventListener('click',async e=>{
   S.busy=false;if(r.error){render();return guard(r.error)}S.cash=r.data;go('ditutup')}
 });
 document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
- if(t.id==='mi'&&d.num){const v=t.value.replace(/\D/g,'').slice(0,9);t.value=v?rp(v):''}else if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value});
+ if(t.id==='mi'&&d.num){const v=t.value.replace(/\D/g,'').slice(0,9);t.value=v?rp(v):''}else if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value;else if(d.cn)S.cn.v=t.value});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){S.cash=null;S.orders=[];S.cart={};go('login')}});
 setInterval(async()=>{if(S.view==='antrean'&&!document.hidden&&!S.modal){await loadOrders();render()}},8000);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
