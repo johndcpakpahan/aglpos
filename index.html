@@ -53,8 +53,8 @@ const ell='min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 const NOTE_CHIPS=['Sambal pisah','Pedes','Sambel dikit','Pijit','Nasi 1/2','Kuah pisah'];
 const potShort=g=>Object.entries(g).filter(([k,n])=>k!=='default'&&n>0).map(([k,n])=>n+' '+POT[k]).join(', ');
 const itemsHtml=o=>{const m={};o.order_items.forEach(i=>{const e=m[i.menu_code]||(m[i.menu_code]={n:0,g:{},note:''});e.n+=i.qty;e.g[i.potongan]=(e.g[i.potongan]||0)+i.qty;if(i.note&&!e.note)e.note=i.note});
- const rows=Object.entries(m).map(([c,e])=>{const hasP=Object.keys(e.g).some(k=>k!=='default'&&e.g[k]>0),pt=hasP?Object.entries(e.g).filter(([,n])=>n>0).map(([k,n])=>n+' '+(POT[k]||k)).join(', '):'',det=[pt?'Potongan: '+pt:'',e.note?'Catatan: '+e.note:''].filter(Boolean).join(' · ');
-  return `<div style="margin-top:6px"><b style="font-size:17px">${e.n}× ${esc(c)}</b>${det?`<p class="sub" style="margin:0">${esc(det)}</p>`:''}</div>`}).join('');
+ const rows=Object.entries(m).map(([c,e])=>{const hasP=Object.keys(e.g).some(k=>k!=='default'&&e.g[k]>0),pt=hasP?Object.entries(e.g).filter(([,n])=>n>0).map(([k,n])=>n+' '+(POT[k]||k)).join(', '):'',det=[pt?'Potongan: '+pt:'',e.note?'Catatan: '+e.note:''].filter(Boolean);
+  return `<div style="margin-top:6px"><b style="font-size:17px">${e.n}× ${esc(c)}</b>${det.map(x=>`<p class="sub" style="margin:0">${esc(x)}</p>`).join('')}</div>`}).join('');
  return rows+(o.general_note?`<p class="sub" style="margin:6px 0 0">Catatan umum: ${esc(o.general_note)}</p>`:'')};
 const nonDef=g=>Object.entries(g).filter(([k,n])=>k!=='default'&&n>0).length;
 const logo='<img src="logo.png" alt="Ayam Geprek Langganan" style="width:200px;height:auto;display:block;margin:0 auto">';
