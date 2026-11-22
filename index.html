@@ -50,7 +50,7 @@ const summ=o=>{const m={};o.order_items.forEach(i=>m[i.menu_code]=(m[i.menu_code
 const mins=o=>Math.max(0,Math.round((Date.now()-new Date(o.created_at))/60000))+' mnt';
 const potTxt=g=>Object.entries(g).filter(([,n])=>n>0).map(([k,n])=>POT[k]+' ×'+n).join(', ');
 const ell='min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-const NOTE_CHIPS=['Sambal dipisah','Tanpa timun','Tanpa lalapan','Pedas level 3'];
+const NOTE_CHIPS=['Sambal pisah','Pedes','Sambel dikit','Pijit','Nasi 1/2','Kuah pisah'];
 const potShort=g=>Object.entries(g).filter(([k,n])=>k!=='default'&&n>0).map(([k,n])=>n+' '+POT[k]).join(', ');
 const itemsHtml=o=>{const m={};o.order_items.forEach(i=>{const e=m[i.menu_code]||(m[i.menu_code]={n:0,g:{},note:''});e.n+=i.qty;e.g[i.potongan]=(e.g[i.potongan]||0)+i.qty;if(i.note&&!e.note)e.note=i.note});
  const rows=Object.entries(m).map(([c,e])=>{const hasP=Object.keys(e.g).some(k=>k!=='default'&&e.g[k]>0),pt=hasP?Object.entries(e.g).filter(([,n])=>n>0).map(([k,n])=>n+' '+(POT[k]||k)).join(', '):'',det=[pt?'Potongan: '+pt:'',e.note?'Catatan: '+e.note:''].filter(Boolean).join(' · ');
