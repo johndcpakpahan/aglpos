@@ -76,8 +76,8 @@ const vRingkas=()=>{const f=S.f,sg=(k,v,i,t)=>`<button class="${f[k]===v?'on':''
 function vTutup(){
  const L=S.orders.filter(o=>o.status==='active'),un=L.filter(o=>!o.is_done).length;
  const rows=[['Pesanan hari ini',L.length],['Pesanan staff',L.filter(isSt).length],['Total nilai pesanan',rp(L.reduce((a,o)=>a+tot(o),0))],['Belum ditandai bayar',L.filter(o=>!isSt(o)&&!o.is_paid).length]];
- return `<div class="hd"><div style="display:flex;align-items:center;gap:6px">${back('kembali')}<h1>Tutup Kasir</h1></div></div><div class="bd sc"><div class="card"><div class="r"><span class="sub">Cash awal</span><b style="font-size:18px">${rp(S.cash.cash_start)}</b></div><label class="lbl" for="ce" style="margin-top:14px">Cash akhir</label><input class="in" id="ce" data-cash="ce" inputmode="numeric" placeholder="Rp 0" value="${S.ce?rp(S.ce):''}" style="${big}"></div><div class="card" style="display:flex;flex-direction:column;gap:12px">${rows.map(([a,b])=>`<div class="r"><span class="sub">${a}</span><b style="font-size:18px">${b}</b></div>`).join('')}</div>${un?`<div class="warn">${un} pesanan belum selesai. Tandai selesai dulu.</div>`:''}</div><div class="bot"><button class="btn" data-a="tutupgo" ${un||!S.ce||S.busy?'disabled':''}>${ic('lock')}Tutup kasir</button></div>`}
-const vDitutup=()=>`<div class="sc" style="${ctr}">${logo}<div class="card"><h1>Kasir ditutup</h1><p class="sub" style="margin-top:8px">Cash awal ${rp(S.cash.cash_start)}, cash akhir ${rp(S.cash.cash_end)}.</p></div></div><div class="bot"><button class="lnk" data-a="logout" style="margin:0 auto">Keluar</button></div>`;
+ return `<div class="hd"><div style="display:flex;align-items:center;gap:6px">${back('kembali')}<h1>Tutup Kasir</h1></div></div><div class="bd sc"><div class="card"><div class="r"><span class="sub">Cash awal</span><span style="display:flex;align-items:center;gap:4px"><b style="font-size:18px">${rp(S.cash.cash_start)}</b><button class="lnk" data-a="edawal" aria-label="Ubah cash awal" style="width:44px;justify-content:center">${ic('note')}</button></span></div><label class="lbl" for="ce" style="margin-top:14px">Cash akhir</label><input class="in" id="ce" data-cash="ce" inputmode="numeric" placeholder="Rp 0" value="${S.ce?rp(S.ce):''}" style="${big}"></div><div class="card" style="display:flex;flex-direction:column;gap:12px">${rows.map(([a,b])=>`<div class="r"><span class="sub">${a}</span><b style="font-size:18px">${b}</b></div>`).join('')}</div>${un?`<div class="warn">${un} pesanan belum selesai. Tandai selesai dulu.</div>`:''}</div><div class="bot"><button class="btn" data-a="tutupgo" ${un||!S.ce||S.busy?'disabled':''}>${ic('lock')}Tutup kasir</button></div>`}
+const vDitutup=()=>`<div class="sc" style="${ctr}">${logo}<div class="card"><h1>Kasir ditutup</h1><div class="r" style="margin-top:12px"><span class="sub">Cash awal</span><span style="display:flex;align-items:center;gap:4px"><b style="font-size:18px">${rp(S.cash.cash_start)}</b><button class="lnk" data-a="edawal" aria-label="Ubah cash awal" style="width:44px;justify-content:center">${ic('note')}</button></span></div><div class="r"><span class="sub">Cash akhir</span><span style="display:flex;align-items:center;gap:4px"><b style="font-size:18px">${rp(S.cash.cash_end)}</b><button class="lnk" data-a="edakhir" aria-label="Ubah cash akhir" style="width:44px;justify-content:center">${ic('note')}</button></span></div></div></div><div class="bot"><button class="lnk" data-a="reopen" style="margin:0 auto">Buka kembali kasir</button><button class="lnk" data-a="logout" style="margin:0 auto;font-size:14px;min-height:36px">Keluar</button></div>`;
 function vPot(){
  const p=S.pot,t=q(p.c),rem=t-Object.values(p.g).reduce((a,b)=>a+b,0);
  const rows=Object.keys(POT).filter(k=>k!=='default').map(k=>`<div class="r" style="min-height:52px;border-top:1px solid #DBC4A0"><span>${POT[k]}</span><div class="stp"><button data-a="potd" data-k="${k}" data-d="-1" aria-label="Kurangi ${POT[k]}">${ic('minus')}</button><span>${p.g[k]||0}</span><button data-a="potd" data-k="${k}" data-d="1" ${rem<=0?'disabled':''} aria-label="Tambah ${POT[k]}">${ic('plus')}</button></div></div>`).join('');
@@ -85,8 +85,8 @@ function vPot(){
 function render(){const sc=$('.sc'),y=sc?sc.scrollTop:0,V={login:vLogin,buka:vBuka,antrean:vAntrean,menu:vMenu,ringkas:vRingkas,tutup:vTutup,ditutup:vDitutup};
  $('#app').innerHTML=S.view==='boot'?'<p class="sub" style="padding:40px">Memuat…</p>':V[S.view]()+(S.pot?vPot():'');const n=$('.sc');if(n)n.scrollTop=y}
 function go(v){S.view=v;render();const n=$('.sc');if(n)n.scrollTop=0}
-function ask(t,s,y,inp){return new Promise(res=>{const m=$('#md');m.innerHTML=`<div class="card"><b style="font-size:22px">${esc(t)}</b>${s?`<p class="sub">${esc(s)}</p>`:''}${inp!=null?`<input class="in" id="mi" value="${esc(inp)}">`:''}<div class="seg"><button data-m="0">Batal</button><button class="pri" data-m="1">${esc(y||'Ya')}</button></div></div>`;m.classList.add('show');S.modal=1;
- m.onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;const ok=b.dataset.m==='1',v=inp!=null?(ok?$('#mi').value:null):ok;m.classList.remove('show');m.innerHTML='';S.modal=0;res(v)};if(inp!=null)$('#mi').focus()})}
+function ask(t,s,y,inp,num){return new Promise(res=>{const m=$('#md');m.innerHTML=`<div class="card"><b style="font-size:22px">${esc(t)}</b>${s?`<p class="sub">${esc(s)}</p>`:''}${inp!=null?`<input class="in" id="mi" ${num?'data-num="1" inputmode="numeric"':''} value="${num&&inp!==''?rp(inp):esc(inp)}">`:''}<div class="seg"><button data-m="0">Batal</button><button class="pri" data-m="1">${esc(y||'Ya')}</button></div></div>`;m.classList.add('show');S.modal=1;
+ m.onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;const ok=b.dataset.m==='1',v=inp!=null?(ok?(num?$('#mi').value.replace(/\D/g,''):$('#mi').value):null):ok;m.classList.remove('show');m.innerHTML='';S.modal=0;res(v)};if(inp!=null)$('#mi').focus()})}
 async function guard(e){const {data:r}=await sb.rpc('app_role');if(!r){S.err='Sesi berakhir. Masuk lagi.';await sb.auth.signOut();return}alert('Gagal: '+e.message)}
 async function loadOrders(){const {data,error}=await sb.from('orders').select('*,order_items(*)').eq('business_date',today()).order('created_at');if(error)return guard(error);S.orders=data||[]}
 async function boot(){
@@ -127,6 +127,19 @@ async function simpan(){
  if(r.error){await sb.from('orders').update({status:'cancelled',cancel_reason:'gagal simpan item'}).eq('id',ord.id);S.busy=false;render();return guard(r.error)}
  await sb.from('order_events').insert({order_id:ord.id,action:'dibuat',by_email:S.email});
  S.cart={};S.f={tipe:'dine_in',meja:'',untuk:'customer',nama:'',umum:''};S.busy=false;S.tab='aktif';await loadOrders();go('antrean')}
+async function editCash(field){
+ const lab=field==='cash_start'?'Cash awal':'Cash akhir',old=S.cash[field];
+ const v=await ask('Ubah '+lab,'Saat ini '+(old==null?'-':rp(old)),'Simpan',old==null?'':String(old),1);
+ if(v===null)return;if(v==='')return alert('Isi jumlah cash dulu.');
+ const n=+v;if(n===old)return;
+ const r=await sb.from('cash_sessions').update({[field]:n}).eq('id',S.cash.id).select().single();if(r.error)return guard(r.error);
+ S.cash=r.data;if(field==='cash_end')S.ce=String(n);
+ await sb.from('cash_events').insert({session_id:S.cash.id,field,old_value:old,new_value:n,by_email:S.email});render()}
+async function reopen(){
+ if(!await ask('Buka kembali kasir?','Kasir hari ini dibuka lagi untuk pesanan dan perubahan.','Ya, buka kembali'))return;
+ const r=await sb.from('cash_sessions').update({closed_at:null,closed_by:null}).eq('id',S.cash.id).select().single();if(r.error)return guard(r.error);
+ S.cash=r.data;S.ce=r.data.cash_end==null?'':String(r.data.cash_end);
+ await sb.from('cash_events').insert({session_id:S.cash.id,field:'buka_kembali',by_email:S.email});await loadOrders();go('antrean')}
 document.addEventListener('click',async e=>{
  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const d=b.dataset,a=d.a;
  if(a==='login'){const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error){S.err=error.message;render()}}
@@ -151,13 +164,14 @@ document.addEventListener('click',async e=>{
  else if(a==='simpan')simpan();
  else if(a==='tog')tog(d.id,d.k);
  else if(a==='tutup')go('tutup');
+ else if(a==='edawal')editCash('cash_start');else if(a==='edakhir')editCash('cash_end');else if(a==='reopen')reopen();
  else if(a==='tutupgo'){
   if(!await ask('Tutup kasir hari ini?','Cash awal '+rp(S.cash.cash_start)+', cash akhir '+rp(S.ce),'Ya, tutup'))return;
   S.busy=true;render();const r=await sb.from('cash_sessions').update({cash_end:+S.ce,closed_by:S.email,closed_at:new Date().toISOString()}).eq('id',S.cash.id).select().single();
   S.busy=false;if(r.error){render();return guard(r.error)}S.cash=r.data;go('ditutup')}
 });
 document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
- if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value});
+ if(t.id==='mi'&&d.num){const v=t.value.replace(/\D/g,'').slice(0,9);t.value=v?rp(v):''}else if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){S.cash=null;S.orders=[];S.cart={};go('login')}});
 setInterval(async()=>{if(S.view==='antrean'&&!document.hidden&&!S.modal){await loadOrders();render()}},8000);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
