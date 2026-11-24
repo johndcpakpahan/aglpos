@@ -25,6 +25,14 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.col{display:flex;flex-direction:column;gap:8px}.sec{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#62575F;margin:4px 0}
 .pill{background:#5B5F8D;color:#fff;border-radius:99px;padding:3px 10px;font-size:13px;font-weight:600;display:inline-flex;gap:4px;align-items:center}.ttl{display:flex;align-items:center;gap:6px;font-size:18px}.ttl svg{color:#DA6B51}
 .warn{background:#F4C9BC;color:#6B2B1D;border-radius:12px;padding:10px 12px;font-size:14px}
+.ch{display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:4px 10px;font-size:15px;font-weight:600;min-width:74px;justify-content:center}
+.ch svg{width:16px;height:16px}
+.ch.soft{background:#DCE5D6;color:#2F4A2C}
+.ch.dn{background:#EAD9B8;color:#62575F}
+.ch.hot{background:#C0392B;color:#fff;animation:aglp 1.1s ease-in-out infinite}
+.card.late{border:2px solid #C0392B;padding:11px}
+@keyframes aglp{0%,100%{background:#C0392B;transform:scale(1);box-shadow:0 0 0 0 rgba(192,57,43,.55)}50%{background:#E04A38;transform:scale(1.07);box-shadow:0 0 0 7px rgba(192,57,43,0)}}
+@media (prefers-reduced-motion:reduce){.ch.hot{animation:none}}
 .pill.ok{background:#DCE5D6;color:#2F2A31}.pill.no{background:#F4C9BC;color:#6B2B1D}
 #md{position:fixed;inset:0;display:none;padding:24px;background:rgba(72,65,73,.6);z-index:9}#md.show{display:flex}#md .card{width:100%;max-width:440px;margin:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
 </style></head><body><div id="app"></div><div id="md"></div>
@@ -53,7 +61,10 @@ const label=o=>(o.order_no?'#'+o.order_no.split('-').pop():'#Baru')+' · '+(o.or
 const aktif=o=>!o.is_done||(!o.is_paid&&!isSt(o));
 const tot=o=>isSt(o)?0:o.order_items.reduce((a,i)=>a+i.qty*i.unit_price,0);
 const summ=o=>{const m={};o.order_items.forEach(i=>m[i.menu_code]=(m[i.menu_code]||0)+i.qty);return Object.entries(m).map(([c,n])=>n+'× '+nm(c)).join(', ')};
-const mins=o=>Math.max(0,Math.round((Date.now()-new Date(o.created_at))/60000))+' mnt';
+const minN=o=>Math.max(0,Math.round((Date.now()-new Date(o.created_at))/60000));
+const mins=o=>minN(o)+' mnt';
+const late=o=>o.status==='active'&&!o.is_done&&!isSt(o)&&minN(o)>=5;
+const chip=o=>`<span class="ch ${o.is_done?'dn':late(o)?'hot':'soft'}">${ic('clock')}${mins(o)}</span>`;
 const potTxt=g=>Object.entries(g).filter(([,n])=>n>0).map(([k,n])=>POT[k]+' ×'+n).join(', ');
 const ell='min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
 const NOTE_CHIPS=['Sambal pisah','Pedes','Sambel dikit','Pijit','Nasi 1/2','Kuah pisah'];
@@ -72,7 +83,7 @@ const vLogin=()=>`<div class="sc" style="${ctr}">${logo}<div class="card" style=
 const vBuka=()=>`<div class="sc" style="${ctr}">${logo}<div><h1>Buka Kasir</h1><p class="sub">${new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'})}</p></div><div class="card"><label class="lbl" for="cs">Jumlah cash di awal hari:</label><input class="in" id="cs" data-cash="cs" inputmode="numeric" placeholder="Rp 0" value="${S.cs?rp(S.cs):''}" style="${big}"></div></div><div class="bot"><button class="btn" data-a="mulai" ${S.busy?'disabled':''}>Mulai hari</button></div>`;
 function vAntrean(){
  const L=S.orders.filter(o=>o.status==='active'),A=L.filter(aktif),D=L.filter(o=>!aktif(o)).reverse(),X=S.tab==='aktif'?A:D;
- const card=o=>`<div class="card"><div class="r"><b class="ttl">${ic(typeIc(o))}${esc(label(o))}</b>${isSt(o)?`<span class="pill" style="max-width:55%">${ic('user')}<span style="${ell}">Staff${o.staff_name?' · '+esc(o.staff_name):''}</span></span>`:`<span class="sub" style="display:flex;align-items:center;gap:4px">${ic('clock')}${mins(o)}</span>`}</div><div style="margin-top:2px">${itemsHtml(o)}</div>${isSt(o)?'':`<div class="r" style="margin-top:6px"><span class="sub">Total</span><b style="font-size:17px">${rp(tot(o))}</b></div>`}<div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${isSt(o)?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}<button class="ab" data-a="edit" data-id="${o.id}" aria-label="Ubah pesanan">${ic('note')}</button><button class="ab" data-a="cancel" data-id="${o.id}" aria-label="Batalkan pesanan">${ic('x')}</button></div></div>`;
+ const card=o=>`<div class="card${late(o)?' late':''}"><div class="r"><b class="ttl">${ic(typeIc(o))}${esc(label(o))}</b>${isSt(o)?`<span class="pill" style="max-width:55%">${ic('user')}<span style="${ell}">Staff${o.staff_name?' · '+esc(o.staff_name):''}</span></span>`:chip(o)}</div><div style="margin-top:2px">${itemsHtml(o)}</div>${isSt(o)?'':`<div class="r" style="margin-top:6px"><span class="sub">Total</span><b style="font-size:17px">${rp(tot(o))}</b></div>`}<div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${isSt(o)?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}<button class="ab" data-a="edit" data-id="${o.id}" aria-label="Ubah pesanan">${ic('note')}</button><button class="ab" data-a="cancel" data-id="${o.id}" aria-label="Batalkan pesanan">${ic('x')}</button></div></div>`;
  return `<div class="hd"><div><h1>Pesanan</h1><p class="sub">${A.length} pesanan aktif${S.ob.length?' · ⏳ '+S.ob.length+' menunggu sinkron':''}</p></div><button class="lnk" data-a="tutup">${ic('lock')}Tutup kasir</button></div><div class="bd sc"><div class="seg"><button class="${S.tab==='aktif'?'on':''}" data-a="tab" data-v="aktif">Aktif (${A.length})</button><button class="${S.tab==='selesai'?'on':''}" data-a="tab" data-v="selesai">Selesai</button></div>${X.map(card).join('')||'<p class="sub">Belum ada pesanan.</p>'}</div><div class="bot"><div style="display:flex;gap:8px"><button class="btn" data-a="baru" style="flex:1">${ic('plus')}Pesanan baru</button><button class="btn" data-a="riwayat" style="width:auto;padding:0 18px;background:#5B5F8D" aria-label="Riwayat pesanan">${ic('clock')}Riwayat</button></div><button class="lnk" data-a="logout" style="margin:6px auto 0;min-height:36px;font-size:14px">Keluar (${esc(S.email)})</button></div>`}
 function vMenu(){
  const M=S.menu.filter(m=>m.category===S.cat);
