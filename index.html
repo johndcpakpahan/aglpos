@@ -25,6 +25,7 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.col{display:flex;flex-direction:column;gap:8px}.sec{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#62575F;margin:4px 0}
 .pill{background:#5B5F8D;color:#fff;border-radius:99px;padding:3px 10px;font-size:13px;font-weight:600;display:inline-flex;gap:4px;align-items:center}.ttl{display:flex;align-items:center;gap:6px;font-size:18px}.ttl svg{color:#DA6B51}
 .warn{background:#F4C9BC;color:#6B2B1D;border-radius:12px;padding:10px 12px;font-size:14px}
+.pill.ok{background:#DCE5D6;color:#2F2A31}.pill.no{background:#F4C9BC;color:#6B2B1D}
 #md{position:fixed;inset:0;display:none;padding:24px;background:rgba(72,65,73,.6);z-index:9}#md.show{display:flex}#md .card{width:100%;max-width:440px;margin:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
 </style></head><body><div id="app"></div><div id="md"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -39,7 +40,7 @@ const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Jakarta'})
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const POT={default:'Default',paha_atas:'Paha Atas',paha_bawah:'Paha Bawah',dada:'Dada',sayap:'Sayap'};
 const F0=()=>({tipe:'dine_in',svc:'',meja:'',untuk:'customer',nama:'',umum:''});
-const S={view:'boot',email:'',menu:[],orders:[],cash:null,tab:'aktif',lay:localStorage.getItem('lay')||'list',cat:'ayam',cart:{},f:F0(),cs:'',ce:'',pot:null,cn:null,busy:false,err:'',modal:0,edit:null,svcPick:false,srv:[],ob:[],flushing:false};
+const S={view:'boot',email:'',menu:[],orders:[],cash:null,tab:'aktif',lay:localStorage.getItem('lay')||'list',cat:'ayam',cart:{},f:F0(),cs:'',ce:'',pot:null,cn:null,busy:false,err:'',modal:0,edit:null,svcPick:false,srv:[],ob:[],flushing:false,role:'',rd:today(),rsrv:[],ro:[],rl:0,rerr:'',fromR:0};
 const q=c=>Object.values((S.cart[c]||{}).g||{}).reduce((a,b)=>a+b,0);
 const cnt=()=>Object.keys(S.cart).reduce((a,c)=>a+q(c),0);
 const cartTot=()=>S.menu.reduce((a,m)=>a+q(m.code)*(+m.price||0),0);
@@ -72,7 +73,7 @@ const vBuka=()=>`<div class="sc" style="${ctr}">${logo}<div><h1>Buka Kasir</h1><
 function vAntrean(){
  const L=S.orders.filter(o=>o.status==='active'),A=L.filter(aktif),D=L.filter(o=>!aktif(o)).reverse(),X=S.tab==='aktif'?A:D;
  const card=o=>`<div class="card"><div class="r"><b class="ttl">${ic(typeIc(o))}${esc(label(o))}</b>${isSt(o)?`<span class="pill" style="max-width:55%">${ic('user')}<span style="${ell}">Staff${o.staff_name?' · '+esc(o.staff_name):''}</span></span>`:`<span class="sub" style="display:flex;align-items:center;gap:4px">${ic('clock')}${mins(o)}</span>`}</div><div style="margin-top:2px">${itemsHtml(o)}</div>${isSt(o)?'':`<div class="r" style="margin-top:6px"><span class="sub">Total</span><b style="font-size:17px">${rp(tot(o))}</b></div>`}<div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${isSt(o)?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}<button class="ab" data-a="edit" data-id="${o.id}" aria-label="Ubah pesanan">${ic('note')}</button><button class="ab" data-a="cancel" data-id="${o.id}" aria-label="Batalkan pesanan">${ic('x')}</button></div></div>`;
- return `<div class="hd"><div><h1>Pesanan</h1><p class="sub">${A.length} pesanan aktif${S.ob.length?' · ⏳ '+S.ob.length+' menunggu sinkron':''}</p></div><button class="lnk" data-a="tutup">${ic('lock')}Tutup kasir</button></div><div class="bd sc"><div class="seg"><button class="${S.tab==='aktif'?'on':''}" data-a="tab" data-v="aktif">Aktif (${A.length})</button><button class="${S.tab==='selesai'?'on':''}" data-a="tab" data-v="selesai">Selesai</button></div>${X.map(card).join('')||'<p class="sub">Belum ada pesanan.</p>'}</div><div class="bot"><button class="btn" data-a="baru">${ic('plus')}Pesanan baru</button><button class="lnk" data-a="logout" style="margin:6px auto 0;min-height:36px;font-size:14px">Keluar (${esc(S.email)})</button></div>`}
+ return `<div class="hd"><div><h1>Pesanan</h1><p class="sub">${A.length} pesanan aktif${S.ob.length?' · ⏳ '+S.ob.length+' menunggu sinkron':''}</p></div><button class="lnk" data-a="tutup">${ic('lock')}Tutup kasir</button></div><div class="bd sc"><div class="seg"><button class="${S.tab==='aktif'?'on':''}" data-a="tab" data-v="aktif">Aktif (${A.length})</button><button class="${S.tab==='selesai'?'on':''}" data-a="tab" data-v="selesai">Selesai</button></div>${X.map(card).join('')||'<p class="sub">Belum ada pesanan.</p>'}</div><div class="bot"><div style="display:flex;gap:8px"><button class="btn" data-a="baru" style="flex:1">${ic('plus')}Pesanan baru</button><button class="btn" data-a="riwayat" style="width:auto;padding:0 18px;background:#5B5F8D" aria-label="Riwayat pesanan">${ic('clock')}Riwayat</button></div><button class="lnk" data-a="logout" style="margin:6px auto 0;min-height:36px;font-size:14px">Keluar (${esc(S.email)})</button></div>`}
 function vMenu(){
  const M=S.menu.filter(m=>m.category===S.cat);
  const stp=(c,n)=>`<div class="stp"><button data-a="add" data-c="${c}" data-d="-1" aria-label="Kurangi ${esc(nm(c))}">${ic('minus')}</button><span>${n}</span><button data-a="add" data-c="${c}" data-d="1" aria-label="Tambah ${esc(nm(c))}">${ic('plus')}</button></div>`;
@@ -88,6 +89,31 @@ const vRingkas=()=>{const f=S.f,sg=(k,v,i,t)=>`<button class="${f[k]===v?'on':''
 const vSvc=()=>`<div style="position:fixed;inset:0;z-index:8;display:flex;align-items:flex-end;justify-content:center"><div data-a="svcx" style="position:absolute;inset:0;background:rgba(72,65,73,.6)"></div><div class="card" style="position:relative;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom))"><b class="ttl" style="font-size:22px">${ic('globe')}Layanan online</b><p class="sub" style="margin:4px 0 10px">Pilih layanan asal pesanan ini.</p>${['GrabFood','GoFood','ShopeeFood'].map(n=>`<button class="r" data-a="svcset" data-v="${n}" style="width:100%;min-height:52px;border:0;border-top:1px solid #DBC4A0;background:none;font:600 19px 'Barlow Condensed',sans-serif;color:#484149;padding:0;text-align:left"><span>${n}</span>${ic('chev')}</button>`).join('')}</div></div>`;
 function vBelum(){const U=S.orders.filter(o=>o.status==='active'&&!isSt(o)&&!o.is_paid);
  return `<div class="hd"><div style="display:flex;align-items:center;gap:6px">${back('tutup')}<h1>Belum bayar</h1></div></div><div class="bd sc">${U.map(o=>`<div class="card"><div class="r"><b class="ttl">${ic(typeIc(o))}${esc(label(o))}</b><b style="font-size:18px">${rp(tot(o))}</b></div><p class="sub">${esc(summ(o))}</p><div class="act"><button class="ab" data-a="tog" data-k="paid" data-id="${o.id}" aria-label="Sudah bayar">${ic('cash')}</button></div></div>`).join('')||'<p class="sub">Semua pesanan sudah dibayar.</p>'}</div>`}
+const fmtD=d=>new Date(d+'T00:00:00+07:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'});
+const fmtDL=d=>new Date(d+'T00:00:00+07:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'});
+const addDays=(d,n)=>{const t=new Date(d+'T00:00:00Z');t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
+function setRd(d){if(!d||d>today())d=today();S.rd=d;S.rsrv=[];S.ro=[];S.rerr='';loadRiwayat(1)}
+async function loadRiwayat(chg){
+ if(chg){S.rl=1;render()}
+ const d=S.rd,{data,error}=await sb.from('orders').select('*,order_items(*)').eq('business_date',d).order('created_at');
+ if(d!==S.rd)return;
+ S.rl=0;
+ if(error){if(isNet(error)){S.rerr='Tidak ada koneksi. Riwayat tanggal ini belum bisa dimuat.';S.rsrv=[];project();return render()}return guard(error)}
+ S.rerr='';S.rsrv=data||[];project();render()}
+function vRiwayat(){
+ const L=S.ro,A=L.filter(o=>o.status==='active'),N=A.filter(o=>!isSt(o)),ed=canEdit(),nx=S.rd>=today();
+ const isAyam=i=>(S.menu.find(m=>m.code===i.menu_code)||{}).category==='ayam';
+ const porsi=N.reduce((a,o)=>a+o.order_items.filter(isAyam).reduce((x,i)=>x+i.qty,0),0),nilai=N.reduce((a,o)=>a+tot(o),0),batal=L.length-A.length;
+ const pend=S.ob.some(x=>x.date===S.rd||L.some(o=>o.id===(x.id||(x.p&&x.p.id))));
+ const jam=o=>new Date(o.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'});
+ const pl=(t,k)=>`<span class="pill ${k}">${t}</span>`;
+ const card=o=>{const x=o.status==='cancelled',st=isSt(o);
+  const flags=x?pl('Dibatalkan','no'):pl(o.is_done?'Selesai':'Belum selesai',o.is_done?'ok':'no')+(st?`<span class="pill">${ic('user')}<span>Staff${o.staff_name?' · '+esc(o.staff_name):''}</span></span>`:pl(o.is_paid?'Sudah bayar':'Belum bayar',o.is_paid?'ok':'no'));
+  const btns=ed&&!x?`<div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${st?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}<button class="ab" data-a="edit" data-id="${o.id}" aria-label="Ubah pesanan">${ic('note')}</button><button class="ab" data-a="cancel" data-id="${o.id}" aria-label="Batalkan pesanan">${ic('x')}</button></div>`:'';
+  return `<div class="card"${x?' style="opacity:.65"':''}><div class="r"><b class="ttl">${ic(typeIc(o))}${esc(label(o))}</b><span class="sub" style="display:flex;align-items:center;gap:4px">${ic('clock')}${jam(o)}</span></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${flags}</div><div style="margin-top:2px">${itemsHtml(o)}</div>${st||x?'':`<div class="r" style="margin-top:6px"><span class="sub">Total</span><b style="font-size:17px">${rp(tot(o))}</b></div>`}${x&&o.cancel_reason?`<p class="sub" style="margin:6px 0 0">Alasan: ${esc(o.cancel_reason)}</p>`:''}${btns}</div>`};
+ const sum=`<div class="card" style="display:flex;flex-direction:column;gap:8px"><div class="r"><span class="sub">Pesanan</span><b style="font-size:18px">${A.length}</b></div><div class="r"><span class="sub">Porsi ayam</span><b style="font-size:18px">${porsi}</b></div><div class="r"><span class="sub">Total nilai pesanan</span><b style="font-size:18px">${rp(nilai)}</b></div>${batal?`<div class="r"><span class="sub">Dibatalkan</span><b style="font-size:18px">${batal}</b></div>`:''}${A.some(isSt)?'<p class="sub" style="margin:0">Pesanan staff tidak dihitung.</p>':''}</div>`;
+ const body=S.rl?'<p class="sub">Memuat…</p>':S.rerr?`<div class="warn">${esc(S.rerr)}</div>`:sum+(pend?'<div class="warn">⏳ Perubahan menunggu sinkron ke Google Sheet.</div>':'')+(ed&&L.length?`<button class="lnk" data-a="rsync" style="margin:0 auto">${ic('list')}Sinkron ulang ke Google Sheet</button>`:'')+(L.map(card).join('')||'<p class="sub">Tidak ada pesanan pada tanggal ini.</p>')+(ed?'':'<p class="sub" style="text-align:center">Hanya Owner yang bisa mengubah pesanan.</p>');
+ return `<div class="hd" style="padding-bottom:8px"><div style="display:flex;align-items:center;gap:6px">${back('kembali')}<h1>Riwayat</h1></div></div><div class="bd" style="padding-bottom:10px"><div class="seg"><button data-a="rgeser" data-v="-1" aria-label="Hari sebelumnya" style="flex:none;width:44px">${ic('back')}</button><input class="in" type="date" data-rd="1" aria-label="Pilih tanggal" max="${today()}" value="${S.rd}" style="flex:1;text-align:center;font-weight:600;height:44px"><button data-a="rgeser" data-v="1" ${nx?'disabled':''} aria-label="Hari berikutnya" style="flex:none;width:44px;opacity:${nx?.4:1}">${ic('chev')}</button></div><p class="sub" style="text-align:center">${fmtDL(S.rd)}</p></div><div class="bd sc">${body}</div>`}
 function vTutup(){
  const L=S.orders.filter(o=>o.status==='active'),un=L.filter(o=>!o.is_done).length;
  const rows=[['Pesanan hari ini',L.length],['Pesanan staff',L.filter(isSt).length],['Total nilai pesanan',rp(L.reduce((a,o)=>a+tot(o),0))],['Belum ditandai bayar',L.filter(o=>!isSt(o)&&!o.is_paid).length]];
@@ -100,7 +126,7 @@ function vPot(){
 function vCat(){const p=S.cn,sel=p.v.split(',').map(x=>x.trim()).filter(Boolean);
  const chips=NOTE_CHIPS.map((t,i)=>{const on=sel.includes(t);return `<button class="${on?'pill':'nt'}" data-a="chip" data-i="${i}" aria-pressed="${on}" style="min-height:44px;border:${on?'0':'1px dashed #8A7E73'};border-radius:99px;padding:0 14px;font:600 15px 'Barlow Condensed',sans-serif;flex:none">${esc(t)}</button>`}).join('');
  return `<div style="position:fixed;inset:0;z-index:8;display:flex;align-items:flex-end;justify-content:center"><div data-a="notex" style="position:absolute;inset:0;background:rgba(72,65,73,.6)"></div><div class="card" style="position:relative;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom))"><b class="ttl" style="font-size:22px">${ic('note')}Catatan</b><p class="sub" style="margin:4px 0 10px">${esc(nm(p.c))}</p><textarea class="in" id="cn" data-cn="1" aria-label="Catatan pesanan" placeholder="Tulis catatan untuk dapur" style="height:88px;padding:10px 14px;resize:none;display:block">${esc(p.v)}</textarea><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${chips}</div><button class="btn" data-a="notesave" style="margin-top:14px">${ic('chk')}Simpan</button></div></div>`}
-function render(){const sc=$('.sc'),y=sc?sc.scrollTop:0,V={login:vLogin,buka:vBuka,antrean:vAntrean,menu:vMenu,ringkas:vRingkas,tutup:vTutup,ditutup:vDitutup,belum:vBelum};if(S.cash)LS('agl_cash',S.cash);
+function render(){const sc=$('.sc'),y=sc?sc.scrollTop:0,V={login:vLogin,buka:vBuka,antrean:vAntrean,riwayat:vRiwayat,menu:vMenu,ringkas:vRingkas,tutup:vTutup,ditutup:vDitutup,belum:vBelum};if(S.cash)LS('agl_cash',S.cash);
  $('#app').innerHTML=S.view==='boot'?'<p class="sub" style="padding:40px">Memuat…</p>':V[S.view]()+(S.pot?vPot():'')+(S.cn?vCat():'')+(S.svcPick?vSvc():'');const n=$('.sc');if(n)n.scrollTop=y}
 function go(v){S.view=v;render();const n=$('.sc');if(n)n.scrollTop=0}
 function ask(t,s,y,inp,num){return new Promise(res=>{const m=$('#md');m.innerHTML=`<div class="card"><b style="font-size:22px">${esc(t)}</b>${s?`<p class="sub">${esc(s)}</p>`:''}${inp!=null?`<input class="in" id="mi" ${num?'data-num="1" inputmode="numeric"':''} value="${num&&inp!==''?rp(inp):esc(inp)}">`:''}<div class="seg"><button data-m="0">Batal</button><button class="pri" data-m="1">${esc(y||'Ya')}</button></div></div>`;m.classList.add('show');S.modal=1;
@@ -109,23 +135,23 @@ async function guard(e){const {data:r}=await sb.rpc('app_role');if(!r){S.err='Se
 const LS=(k,v)=>{try{return v===undefined?JSON.parse(localStorage.getItem(k)||'null'):localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
 const saveOb=()=>LS('agl_ob',S.ob);S.ob=LS('agl_ob')||[];
 const isNet=e=>!navigator.onLine||/fetch|network|load failed/i.test((e&&e.message)||'');
-const SYNC_URL='PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI';
+const SYNC_URL='https://script.google.com/macros/s/AKfycbyGIJpeR9WGlQmYHILeYzXIT3wpyZ2PmxKikdDcEG8WblqnU7uwG-i2FJqHeqLq6wkLMA/exec';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const qs=id=>{if(!S.ob.some(x=>x.t==='sheet'&&x.id===id))S.ob.push({u:uid(),t:'sheet',id})};
-const qd=()=>{if(!S.ob.some(x=>x.t==='sheet'&&x.date===today()))S.ob.push({u:uid(),t:'sheet',date:today()})};
-function project(){const L=JSON.parse(JSON.stringify(S.srv||[]));
+const qd=(d=today())=>{if(!S.ob.some(x=>x.t==='sheet'&&x.date===d))S.ob.push({u:uid(),t:'sheet',date:d})};const sq=o=>o.business_date&&o.business_date!==today()?qd(o.business_date):qs(o.id);const fo=id=>S.orders.find(x=>x.id===id)||S.ro.find(x=>x.id===id);const canEdit=()=>S.role==='owner';
+function proj(src,date){const L=JSON.parse(JSON.stringify(src||[]));
  for(const op of S.ob){
-  if(op.t==='save'){const p=op.p,i=L.findIndex(x=>x.id===p.id),o=i>=0?L[i]:{id:p.id,order_no:'',created_at:op.at,is_done:false,is_paid:false,status:'active'};
+  if(op.t==='save'){const p=op.p,i=L.findIndex(x=>x.id===p.id);if(i<0&&p.business_date!==date)continue;const o=i>=0?L[i]:{id:p.id,order_no:'',created_at:op.at,is_done:false,is_paid:false,status:'active'};
    Object.assign(o,{order_type:p.order_type,online_service:p.online_service||null,table_no:p.table_no||null,customer_kind:p.customer_kind,staff_name:p.staff_name||null,general_note:p.general_note||null,business_date:p.business_date,order_items:p.items.map(x=>({...x}))});o._p=1;if(i<0)L.push(o)}
   else if(op.t==='flag'){const o=L.find(x=>x.id===op.id);if(o){o[op.f==='done'?'is_done':'is_paid']=op.v;o._p=1}}
   else if(op.t==='cancel'){const o=L.find(x=>x.id===op.id);if(o){o.status='cancelled';o._p=1}}}
- S.orders=L}
+ return L}function project(){S.orders=proj(S.srv,today());S.ro=proj(S.rsrv,S.rd)}
 async function loadOrders(){
  const {data,error}=await sb.from('orders').select('*,order_items(*)').eq('business_date',today()).order('created_at');
  if(error){if(isNet(error)){project();return}return guard(error)}
  S.srv=data||[];LS('agl_srv_'+today(),S.srv);project()}
 async function runOp(op){
- if(op.t==='save'){const {error}=await sb.rpc('save_order',{p:op.p});if(error)throw error}
+ if(op.t==='save'){const {error}=await sb.rpc('save_order',{p:op.p});if(error)throw error;if(op.hist)await sb.from('order_events').insert({order_id:op.p.id,action:'diubah',by_email:S.email})}
  else if(op.t==='flag'){const f=op.f==='done'?{is_done:op.v,done_at:op.v?op.at:null}:{is_paid:op.v,paid_at:op.v?op.at:null};
   const {error}=await sb.from('orders').update({...f,updated_by:S.email}).eq('id',op.id);if(error)throw error;
   await sb.from('order_events').insert({order_id:op.id,action:(op.v?'':'batal_')+op.f,by_email:S.email})}
@@ -142,7 +168,7 @@ async function flush(){
   catch(e){if(isNet(e))break;
    if(op.t==='sheet'){op.n=(op.n||0)+1;if(op.n>=5){S.ob=S.ob.filter(x=>x!==op);console.warn('sheet sync dibuang',e.message)}saveOb();break}
    S.ob=S.ob.filter(x=>x!==op);saveOb();alert('Perubahan gagal disimpan: '+e.message)}}
- S.flushing=false;await loadOrders();render()}
+ S.flushing=false;await loadOrders();if(S.view==='riwayat')await loadRiwayat();render()}
 const push=(...o)=>{S.ob.push(...o);saveOb();project();render();flush()};
 async function boot(){
  const {data:{session}}=await sb.auth.getSession();
@@ -150,10 +176,10 @@ async function boot(){
  if(!session)return go('login');
  S.email=session.user.email;
  const {data:role,error:re}=await sb.rpc('app_role');
- if(re&&isNet(re)){S.menu=LS('agl_menu')||[];S.cash=LS('agl_cash');S.srv=LS('agl_srv_'+today())||[];project();
+ if(re&&isNet(re)){S.role=LS('agl_role')||'';S.menu=LS('agl_menu')||[];S.cash=LS('agl_cash');S.srv=LS('agl_srv_'+today())||[];project();
   if(!S.menu.length||!S.cash||S.cash.business_date!==today())return go('buka');return go(S.cash.closed_at?'ditutup':'antrean')}
  if(!role){S.err='Akun tidak terdaftar atau sesi sudah berakhir. Masuk dengan akun yang terdaftar.';await sb.auth.signOut();return go('login')}
- const [m,c]=await Promise.all([sb.from('menu_items').select('*').eq('active',true).order('sort_order'),sb.from('cash_sessions').select('*').eq('business_date',today()).maybeSingle()]);
+ S.role=role;LS('agl_role',role);const [m,c]=await Promise.all([sb.from('menu_items').select('*').eq('active',true).order('sort_order'),sb.from('cash_sessions').select('*').eq('business_date',today()).maybeSingle()]);
  S.menu=m.data||[];S.cash=c.data;LS('agl_menu',S.menu);
  if(!S.cash)return go('buka');
  if(S.cash.closed_at)return go('ditutup');
@@ -162,20 +188,23 @@ function add(c,d){const it=S.cart[c]||(S.cart[c]={g:{},note:''}),g=it.g;
  if(d>0)g.default=(g.default||0)+1;else if(g.default>0)g.default--;else{const k=Object.keys(g).find(x=>g[x]>0);if(k)g[k]--}
  if(q(c)===0)delete S.cart[c]}
 async function tog(id,k){
- const o=S.orders.find(x=>x.id===id),on=k==='done'?o.is_done:o.is_paid;
+ if(S.view==='riwayat'&&!canEdit())return;
+ const o=fo(id),on=k==='done'?o.is_done:o.is_paid;
  const t=k==='done'?(on?'Kembalikan status proses?':'Tandai proses selesai?'):(on?'Kembalikan status bayar?':'Tandai sudah bayar?');
  if(!await ask(t,label(o),on?'Ya, kembalikan':'Ya, tandai'))return;
  const ops=[{u:uid(),t:'flag',id,f:k,v:!on,at:new Date().toISOString()}];
- if(k==='done')qs(id);push(...ops)}
+ if(k==='done'||o.business_date!==today())sq(o);push(...ops)}
 async function simpan(){
- const f=S.f,cur=S.edit&&S.orders.find(o=>o.id===S.edit);
+ const f=S.f,cur=S.edit&&fo(S.edit);
  if(f.tipe==='online'&&!f.svc)return alert('Pilih layanan online dulu.');
+ const past=!!cur&&cur.business_date!==today();if(past&&!canEdit())return alert('Hanya Owner yang bisa mengubah pesanan hari sebelumnya.');
+ if(past&&!await ask('Simpan perubahan pesanan lama?',label(cur)+' · '+fmtD(cur.business_date)+'. Data tanggal itu di Google Sheet ikut diperbarui.','Ya, simpan'))return;
  const pr={};(cur?cur.order_items:[]).forEach(i=>pr[i.menu_code]=i.unit_price);
  const items=[];for(const c of Object.keys(S.cart)){const m=S.menu.find(x=>x.code===c)||{};for(const [p,n] of Object.entries(S.cart[c].g))if(n>0)items.push({menu_code:c,potongan:p,qty:n,unit_price:pr[c]!=null?pr[c]:m.price,note:S.cart[c].note.trim()||null})}
  const id=S.edit||crypto.randomUUID();
  const p={id,business_date:cur?cur.business_date:today(),order_type:f.tipe,online_service:f.tipe==='online'?f.svc:null,table_no:f.tipe==='dine_in'?(f.meja.trim()||null):null,customer_kind:f.untuk,staff_name:f.untuk==='staff'?(f.nama.trim()||null):null,general_note:f.umum.trim()||null,items};
- S.cart={};S.f=F0();S.edit=null;S.tab='aktif';S.view='antrean';
- S.ob.push({u:uid(),t:'save',p,at:new Date().toISOString()});qs(id);saveOb();project();go('antrean');flush()}
+ const rb=S.fromR;S.cart={};S.f=F0();S.edit=null;S.fromR=0;S.tab='aktif';S.view=rb?'riwayat':'antrean';
+ S.ob.push({u:uid(),t:'save',p,at:new Date().toISOString(),hist:past?1:0});if(past)qd(p.business_date);else qs(id);saveOb();project();go(rb?'riwayat':'antrean');flush()}
 async function editCash(field){
  const lab=field==='cash_start'?'Cash awal':'Cash akhir',old=S.cash[field];
  const v=await ask('Ubah '+lab,'Saat ini '+(old==null?'-':rp(old)),'Simpan',old==null?'':String(old),1);
@@ -200,7 +229,7 @@ document.addEventListener('click',async e=>{
   S.busy=false;await loadOrders();go('antrean')}
  else if(a==='tab'){S.tab=d.v;render()}
  else if(a==='baru'||a==='menu')go('menu');
- else if(a==='kembali'){if(S.edit){S.edit=null;S.cart={};S.f=F0()}go('antrean')}
+ else if(a==='kembali'){const rb=S.edit&&S.fromR;if(S.edit){S.edit=null;S.cart={};S.f=F0()}S.fromR=0;go(rb?'riwayat':'antrean')}
  else if(a==='lay'){S.lay=d.v;localStorage.setItem('lay',d.v);render()}
  else if(a==='cat'){S.cat=d.v;render()}
  else if(a==='add'){add(d.c,+d.d);render()}
@@ -218,13 +247,16 @@ document.addEventListener('click',async e=>{
  else if(a==='svcx'){S.svcPick=false;render()}
  else if(a==='svcset'){S.f.tipe='online';S.f.svc=d.v;S.svcPick=false;render()}
  else if(a==='belum')go('belum');
- else if(a==='edit'){const o=S.orders.find(x=>x.id===d.id);if(!o)return;S.edit=o.id;S.cart={};
+ else if(a==='edit'){const o=fo(d.id);if(!o)return;if(o.business_date!==today()&&!canEdit())return;S.edit=o.id;S.fromR=S.view==='riwayat'?1:0;S.cart={};
   o.order_items.forEach(i=>{const c=S.cart[i.menu_code]||(S.cart[i.menu_code]={g:{},note:''});c.g[i.potongan]=(c.g[i.potongan]||0)+i.qty;if(i.note&&!c.note)c.note=i.note});
   S.f={tipe:o.order_type,svc:o.online_service||'',meja:o.table_no||'',untuk:o.customer_kind,nama:o.staff_name||'',umum:o.general_note||''};go('menu')}
- else if(a==='cancel'){const o=S.orders.find(x=>x.id===d.id);if(!o)return;
-  const r=await ask('Batalkan pesanan?',label(o)+'. Pesanan tidak dihitung lagi. Alasan (opsional):','Ya, batalkan','');if(r===null)return;
-  S.ob.push({u:uid(),t:'cancel',id:o.id,reason:String(r).trim()});qs(o.id);saveOb();project();render();flush()}
+ else if(a==='cancel'){const o=fo(d.id);if(!o)return;if(o.business_date!==today()&&!canEdit())return;
+  const r=await ask('Batalkan pesanan?',label(o)+(o.business_date!==today()?' · '+fmtD(o.business_date):'')+'. Pesanan tidak dihitung lagi. Alasan (opsional):','Ya, batalkan','');if(r===null)return;
+  S.ob.push({u:uid(),t:'cancel',id:o.id,reason:String(r).trim()});sq(o);saveOb();project();render();flush()}
  else if(a==='tog')tog(d.id,d.k);
+ else if(a==='riwayat'){go('riwayat');setRd(today())}
+ else if(a==='rgeser')setRd(addDays(S.rd,+d.v));
+ else if(a==='rsync'){qd(S.rd);saveOb();render();flush()}
  else if(a==='tutup')go('tutup');
  else if(a==='edawal')editCash('cash_start');else if(a==='edakhir')editCash('cash_end');else if(a==='reopen')reopen();
  else if(a==='tutupgo'){
@@ -233,8 +265,8 @@ document.addEventListener('click',async e=>{
   S.busy=false;if(r.error){render();return guard(r.error)}S.cash=r.data;qd();saveOb();go('ditutup');flush()}
 });
 document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
- if(t.id==='mi'&&d.num){const v=t.value.replace(/\D/g,'').slice(0,9);t.value=v?rp(v):''}else if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value;else if(d.cn)S.cn.v=t.value});
-sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){S.cash=null;S.orders=[];S.cart={};go('login')}});
+ if(t.id==='mi'&&d.num){const v=t.value.replace(/\D/g,'').slice(0,9);t.value=v?rp(v):''}else if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value;else if(d.cn)S.cn.v=t.value;else if(d.rd)setRd(t.value)});
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){S.cash=null;S.orders=[];S.role='';S.ro=[];S.rsrv=[];LS('agl_role',null);S.cart={};go('login')}});
 setInterval(async()=>{if(S.view==='antrean'&&!document.hidden&&!S.modal){await flush();if(!S.flushing){await loadOrders();render()}}},8000);
 window.addEventListener('online',()=>flush());
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
