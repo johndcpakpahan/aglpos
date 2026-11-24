@@ -109,7 +109,7 @@ async function guard(e){const {data:r}=await sb.rpc('app_role');if(!r){S.err='Se
 const LS=(k,v)=>{try{return v===undefined?JSON.parse(localStorage.getItem(k)||'null'):localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
 const saveOb=()=>LS('agl_ob',S.ob);S.ob=LS('agl_ob')||[];
 const isNet=e=>!navigator.onLine||/fetch|network|load failed/i.test((e&&e.message)||'');
-const SYNC_URL='https://script.google.com/macros/s/AKfycbyGIJpeR9WGlQmYHILeYzXIT3wpyZ2PmxKikdDcEG8WblqnU7uwG-i2FJqHeqLq6wkLMA/exec';
+const SYNC_URL='PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const qs=id=>{if(!S.ob.some(x=>x.t==='sheet'&&x.id===id))S.ob.push({u:uid(),t:'sheet',id})};
 const qd=()=>{if(!S.ob.some(x=>x.t==='sheet'&&x.date===today()))S.ob.push({u:uid(),t:'sheet',date:today()})};
