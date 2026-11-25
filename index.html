@@ -33,7 +33,7 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 .ch.dn{background:#EAD9B8;color:#62575F}
 .ch.hot{background:#C0392B;color:#fff;animation:aglp 1.1s ease-in-out infinite}
 .card.late{border:2px solid #C0392B;padding:11px}
-@keyframes aglp{0%,100%{background:#C0392B;transform:scale(1);box-shadow:0 0 0 0 rgba(192,57,43,.55)}50%{background:#E04A38;transform:scale(1.07);box-shadow:0 0 0 7px rgba(192,57,43,0)}}
+@keyframes aglp{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @media (prefers-reduced-motion:reduce){.ch.hot{animation:none}}
 .pill.ok{background:#DCE5D6;color:#2F2A31}.pill.no{background:#F4C9BC;color:#6B2B1D}
 #md{position:fixed;inset:0;display:none;padding:24px;background:rgba(72,65,73,.6);z-index:9}#md.show{display:flex}#md .card{width:100%;max-width:440px;margin:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
@@ -42,7 +42,11 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 <script>
 const SB_URL='https://ucjxqdlkmryrgbptynob.supabase.co',SB_KEY='sb_publishable_yRdV82Q3fT8rCHMMxTNcjQ_fAHK3A4a';
 const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{flowType:'pkce'}});
+const APP_V='2026-11-25a';
 const $=s=>document.querySelector(s);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const noN=o=>{const m=String(o.order_no||'').split('-').pop();return /^\d+$/.test(m)?+m:Infinity};
+const byNo=(a,b)=>(a.business_date<b.business_date?-1:a.business_date>b.business_date?1:0)||(noN(a)-noN(b))||(new Date(a.created_at)-new Date(b.created_at));
 const P={chk:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',cash:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',back:'<path d="M15 5l-7 7 7 7"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',grid:'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',note:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13 7l4 4"/>',drum:'<path d="M15.4 15.63a7.875 6 135 1 1 6.23-6.23 4.5 3.43 135 0 0-6.23 6.23"/><path d="m8.29 12.71-2.6 2.6a2.5 2.5 0 1 0-1.65 4.65A2.5 2.5 0 1 0 8.7 18.3l2.59-2.59"/>',dine:'<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 2-3 4-3 7 0 2 1 3 3 3v8"/>',bag:'<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',user:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',bowl:'<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',chev:'<path d="M9 5l7 7-7 7"/>'};
 const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
 const rp=n=>'Rp '+(+n||0).toLocaleString('id-ID');
@@ -84,9 +88,9 @@ const back=a=>`<button class="lnk" data-a="${a}" aria-label="Kembali" style="wid
 const vLogin=()=>`<div class="sc" style="${ctr}">${logo}<div class="card" style="padding:20px;display:flex;flex-direction:column;gap:14px"><h1 style="text-align:center">Masuk</h1>${S.err?`<div class="warn">${esc(S.err)}</div>`:''}<button class="btn" data-a="login">${ic('user')}Masuk dengan Google</button><p class="sub" style="text-align:center">Gunakan akun Google yang terdaftar di AGL POS</p></div></div>`;
 const vBuka=()=>`<div class="sc" style="${ctr}">${logo}<div><h1>Buka Kasir</h1><p class="sub">${new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'})}</p></div><div class="card"><label class="lbl" for="cs">Jumlah cash di awal hari:</label><input class="in" id="cs" data-cash="cs" inputmode="numeric" placeholder="Rp 0" value="${S.cs?rp(S.cs):''}" style="${big}"></div></div><div class="bot"><button class="btn" data-a="mulai" ${S.busy?'disabled':''}>Mulai hari</button></div>`;
 function vAntrean(){
- const L=S.orders.filter(o=>o.status==='active'),A=L.filter(aktif),D=L.filter(o=>!aktif(o)).reverse(),X=S.tab==='aktif'?A:D;
+ const L=S.orders.filter(o=>o.status==='active'),A=L.filter(aktif),D=L.filter(o=>!aktif(o)),X=S.tab==='aktif'?A:D;
  const card=o=>`<div class="card${late(o)?' late':''}"><div class="r"><b class="ttl">${ic(typeIc(o))}${esc(label(o))}</b>${isSt(o)?`<span class="pill" style="max-width:55%">${ic('user')}<span style="${ell}">Staff${o.staff_name?' · '+esc(o.staff_name):''}</span></span>`:chip(o)}</div><div style="margin-top:2px">${itemsHtml(o)}</div>${isSt(o)?'':`<div class="r" style="margin-top:6px"><span class="sub">Total</span><b style="font-size:17px">${rp(tot(o))}</b></div>`}<div class="act"><button class="ab${o.is_done?' on':''}" data-a="tog" data-k="done" data-id="${o.id}" aria-pressed="${o.is_done}" aria-label="Proses selesai">${ic('chk')}</button>${isSt(o)?'':`<button class="ab${o.is_paid?' on':''}" data-a="tog" data-k="paid" data-id="${o.id}" aria-pressed="${o.is_paid}" aria-label="Sudah bayar">${ic('cash')}</button>`}<button class="ab" data-a="edit" data-id="${o.id}" aria-label="Ubah pesanan">${ic('note')}</button><button class="ab" data-a="cancel" data-id="${o.id}" aria-label="Batalkan pesanan">${ic('x')}</button></div></div>`;
- return `<div class="hd"><div><h1>Pesanan</h1><p class="sub">${A.length} pesanan aktif${S.ob.length?' · ⏳ '+S.ob.length+' menunggu sinkron':''}</p></div><button class="lnk" data-a="tutup">${ic('lock')}Tutup kasir</button></div><div class="bd sc"><div class="seg"><button class="${S.tab==='aktif'?'on':''}" data-a="tab" data-v="aktif">Aktif (${A.length})</button><button class="${S.tab==='selesai'?'on':''}" data-a="tab" data-v="selesai">Selesai</button></div>${X.map(card).join('')||'<p class="sub">Belum ada pesanan.</p>'}</div><div class="bot"><div style="display:flex;gap:8px"><button class="btn" data-a="baru" style="flex:1">${ic('plus')}Pesanan baru</button><button class="btn" data-a="riwayat" style="width:auto;padding:0 18px;background:#5B5F8D" aria-label="Riwayat pesanan">${ic('clock')}Riwayat</button></div><button class="lnk" data-a="logout" style="margin:6px auto 0;min-height:36px;font-size:14px">Keluar (${esc(S.email)})</button></div>`}
+ return `<div class="hd"><div><h1>Pesanan</h1><p class="sub">${A.length} pesanan aktif${S.ob.length?' · ⏳ '+S.ob.length+' menunggu sinkron':''} · v${APP_V}</p></div><button class="lnk" data-a="tutup">${ic('lock')}Tutup kasir</button></div><div class="bd sc"><div class="seg"><button class="${S.tab==='aktif'?'on':''}" data-a="tab" data-v="aktif">Aktif (${A.length})</button><button class="${S.tab==='selesai'?'on':''}" data-a="tab" data-v="selesai">Selesai</button></div>${X.map(card).join('')||'<p class="sub">Belum ada pesanan.</p>'}</div><div class="bot"><div style="display:flex;gap:8px"><button class="btn" data-a="baru" style="flex:1">${ic('plus')}Pesanan baru</button><button class="btn" data-a="riwayat" style="width:auto;padding:0 18px;background:#5B5F8D" aria-label="Riwayat pesanan">${ic('clock')}Riwayat</button></div><button class="lnk" data-a="logout" style="margin:6px auto 0;min-height:36px;font-size:14px">Keluar (${esc(S.email)})</button></div>`}
 function vMenu(){
  const M=S.menu.filter(m=>m.category===S.cat);
  const stp=(c,n)=>`<div class="stp"><button data-a="add" data-c="${c}" data-d="-1" aria-label="Kurangi ${esc(nm(c))}">${ic('minus')}</button><span>${n}</span><button data-a="add" data-c="${c}" data-d="1" aria-label="Tambah ${esc(nm(c))}">${ic('plus')}</button></div>`;
@@ -139,7 +143,8 @@ function vPot(){
 function vCat(){const p=S.cn,sel=p.v.split(',').map(x=>x.trim()).filter(Boolean);
  const chips=NOTE_CHIPS.map((t,i)=>{const on=sel.includes(t);return `<button class="${on?'pill':'nt'}" data-a="chip" data-i="${i}" aria-pressed="${on}" style="min-height:44px;border:${on?'0':'1px dashed #8A7E73'};border-radius:99px;padding:0 14px;font:600 15px 'Barlow Condensed',sans-serif;flex:none">${esc(t)}</button>`}).join('');
  return `<div style="position:fixed;inset:0;z-index:8;display:flex;align-items:flex-end;justify-content:center"><div data-a="notex" style="position:absolute;inset:0;background:rgba(72,65,73,.6)"></div><div class="card" style="position:relative;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom))"><b class="ttl" style="font-size:22px">${ic('note')}Catatan</b><p class="sub" style="margin:4px 0 10px">${esc(nm(p.c))}</p><textarea class="in" id="cn" data-cn="1" aria-label="Catatan pesanan" placeholder="Tulis catatan untuk dapur" style="height:88px;padding:10px 14px;resize:none;display:block">${esc(p.v)}</textarea><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${chips}</div><button class="btn" data-a="notesave" style="margin-top:14px">${ic('chk')}Simpan</button></div></div>`}
-function render(){const sc=$('.sc'),y=sc?sc.scrollTop:0,V={login:vLogin,buka:vBuka,antrean:vAntrean,riwayat:vRiwayat,menu:vMenu,ringkas:vRingkas,tutup:vTutup,ditutup:vDitutup,belum:vBelum};if(S.cash)LS('agl_cash',S.cash);
+let rq=0;function render(){if(rq)return;rq=1;requestAnimationFrame(()=>{rq=0;renderNow()})}
+function renderNow(){const sc=$('.sc'),y=sc?sc.scrollTop:0,V={login:vLogin,buka:vBuka,antrean:vAntrean,riwayat:vRiwayat,menu:vMenu,ringkas:vRingkas,tutup:vTutup,ditutup:vDitutup,belum:vBelum};if(S.cash)LS('agl_cash',S.cash);
  $('#app').innerHTML=S.view==='boot'?'<p class="sub" style="padding:40px">Memuat…</p>':V[S.view]()+(S.pot?vPot():'')+(S.cn?vCat():'')+(S.svcPick?vSvc():'');const n=$('.sc');if(n)n.scrollTop=y}
 function go(v){S.view=v;render();const n=$('.sc');if(n)n.scrollTop=0}
 function ask(t,s,y,inp,num){return new Promise(res=>{const m=$('#md');m.innerHTML=`<div class="card"><b style="font-size:22px">${esc(t)}</b>${s?`<p class="sub">${esc(s)}</p>`:''}${inp!=null?`<input class="in" id="mi" ${num?'data-num="1" inputmode="numeric"':''} value="${num&&inp!==''?rp(inp):esc(inp)}">`:''}<div class="seg"><button data-m="0">Batal</button><button class="pri" data-m="1">${esc(y||'Ya')}</button></div></div>`;m.classList.add('show');S.modal=1;
@@ -150,43 +155,67 @@ const saveOb=()=>LS('agl_ob',S.ob);S.ob=LS('agl_ob')||[];
 const isNet=e=>!navigator.onLine||/fetch|network|load failed/i.test((e&&e.message)||'');
 const SYNC_URL='https://script.google.com/macros/s/AKfycbyGIJpeR9WGlQmYHILeYzXIT3wpyZ2PmxKikdDcEG8WblqnU7uwG-i2FJqHeqLq6wkLMA/exec';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const qs=id=>{if(!S.ob.some(x=>x.t==='sheet'&&x.id===id))S.ob.push({u:uid(),t:'sheet',id})};
-const qd=(d=today())=>{if(!S.ob.some(x=>x.t==='sheet'&&x.date===d))S.ob.push({u:uid(),t:'sheet',date:d})};const sq=o=>o.business_date&&o.business_date!==today()?qd(o.business_date):qs(o.id);const fo=id=>S.orders.find(x=>x.id===id)||S.ro.find(x=>x.id===id);const canEdit=()=>S.role==='owner';
+const qs=id=>{if(!S.ob.some(x=>x.t==='sheet'&&x.id===id&&!x.fl))S.ob.push({u:uid(),t:'sheet',id})};
+const qd=(d=today())=>{if(!S.ob.some(x=>x.t==='sheet'&&x.date===d&&!x.fl))S.ob.push({u:uid(),t:'sheet',date:d})};const sq=o=>o.business_date&&o.business_date!==today()?qd(o.business_date):qs(o.id);const fo=id=>S.orders.find(x=>x.id===id)||S.ro.find(x=>x.id===id);const canEdit=()=>S.role==='owner';
 function proj(src,date){const L=JSON.parse(JSON.stringify(src||[]));
  for(const op of S.ob){
   if(op.t==='save'){const p=op.p,i=L.findIndex(x=>x.id===p.id);if(i<0&&p.business_date!==date)continue;const o=i>=0?L[i]:{id:p.id,order_no:'',created_at:op.at,is_done:false,is_paid:false,status:'active'};
    Object.assign(o,{order_type:p.order_type,online_service:p.online_service||null,table_no:p.table_no||null,customer_kind:p.customer_kind,staff_name:p.staff_name||null,general_note:p.general_note||null,business_date:p.business_date,order_items:p.items.map(x=>({...x}))});o._p=1;if(i<0)L.push(o)}
   else if(op.t==='flag'){const o=L.find(x=>x.id===op.id);if(o){o[op.f==='done'?'is_done':'is_paid']=op.v;o._p=1}}
   else if(op.t==='cancel'){const o=L.find(x=>x.id===op.id);if(o){o.status='cancelled';o._p=1}}}
- return L}function project(){S.orders=proj(S.srv,today());S.ro=proj(S.rsrv,S.rd)}
+ return L.sort(byNo)}function project(){S.orders=proj(S.srv,today());S.ro=proj(S.rsrv,S.rd)}
 async function loadOrders(){
  const v=S.ver;
  const {data,error}=await sb.from('orders').select('*,order_items(*)').eq('business_date',today()).order('created_at');
  if(error){if(isNet(error)){project();return}return guard(error)}
  if(v!==S.ver)return;
- S.srv=data||[];LS('agl_srv_'+today(),S.srv);project()}
-async function runOp(op){
- if(op.t==='save'){const {error}=await sb.rpc('save_order',{p:op.p});if(error)throw error;if(op.hist)await sb.from('order_events').insert({order_id:op.p.id,action:'diubah',by_email:S.email})}
- else if(op.t==='flag'){const f=op.f==='done'?{is_done:op.v,done_at:op.v?op.at:null}:{is_paid:op.v,paid_at:op.v?op.at:null};
+ S.srv=data||[];const sg=JSON.stringify(S.srv);S.chg=sg!==S.sig;if(S.chg){S.sig=sg;LS('agl_srv_'+today(),S.srv)}project()}
+S.ev=LS('agl_ev')||[];S.ob.forEach(x=>{delete x.fl});
+const evq=(id,action)=>{S.ev.push({order_id:id,action,by_email:S.email});LS('agl_ev',S.ev)};
+async function flushEv(){if(!S.ev.length)return;const b=S.ev.slice(),{error}=await sb.from('order_events').insert(b);
+ if(!error||!isNet(error)){S.ev=S.ev.filter(x=>!b.includes(x));LS('agl_ev',S.ev)}}
+function takeFlags(op){const i0=S.ob.indexOf(op),g=[op];
+ for(let i=i0+1;i<S.ob.length;i++){const x=S.ob[i];
+  if(x.t==='flag'&&x.id===op.id)g.push(x);
+  else if((x.t==='save'&&x.p.id===op.id)||(x.t==='cancel'&&x.id===op.id))break}
+ return g}
+async function runOp(op,grp){
+ if(op.t==='save'){const {error}=await sb.rpc('save_order',{p:op.p});if(error)throw error;if(op.hist)evq(op.p.id,'diubah')}
+ else if(op.t==='flag'){const f={};grp.forEach(x=>{if(x.f==='done'){f.is_done=x.v;f.done_at=x.v?x.at:null}else{f.is_paid=x.v;f.paid_at=x.v?x.at:null}});
   const {error}=await sb.from('orders').update({...f,updated_by:S.email}).eq('id',op.id);if(error)throw error;
-  await sb.from('order_events').insert({order_id:op.id,action:(op.v?'':'batal_')+op.f,by_email:S.email})}
+  grp.forEach(x=>evq(op.id,(x.v?'':'batal_')+x.f))}
  else if(op.t==='cancel'){const {error}=await sb.from('orders').update({status:'cancelled',cancel_reason:op.reason||null,updated_by:S.email}).eq('id',op.id);if(error)throw error;
-  await sb.from('order_events').insert({order_id:op.id,action:'dibatalkan',by_email:S.email})}
- else if(op.t==='sheet'){if(!SYNC_URL.startsWith('http'))return;
-  const {data:{session}}=await sb.auth.getSession();
-  const r=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({jwt:session&&session.access_token,action:op.date?'day':'order',id:op.id,date:op.date})});
-  const j=await r.json();if(!j.ok)throw new Error(j.error||'sinkron sheet gagal')}}
+  evq(op.id,'dibatalkan')}}
+async function flushSheets(){
+ const ops=S.ob.filter(x=>x.t==='sheet');if(!ops.length)return;
+ if(!SYNC_URL.startsWith('http')){S.ob=S.ob.filter(x=>x.t!=='sheet');saveOb();return}
+ ops.forEach(x=>{x.fl=1});
+ try{const {data:{session}}=await sb.auth.getSession();
+  const body={jwt:session&&session.access_token,action:'batch',ids:[...new Set(ops.filter(x=>x.id).map(x=>x.id))],dates:[...new Set(ops.filter(x=>x.date).map(x=>x.date))]};
+  const r=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
+  const j=await r.json();if(!j.ok)throw new Error(j.error||'sinkron sheet gagal');
+  S.ob=S.ob.filter(x=>!ops.includes(x));saveOb()}
+ catch(e){ops.forEach(x=>{delete x.fl;if(!isNet(e))x.n=(x.n||0)+1});
+  if(!isNet(e)){S.ob=S.ob.filter(x=>!(x.t==='sheet'&&x.n>=8));console.warn('sheet sync gagal',e.message)}
+  saveOb();throw e}}
 function commit(op){const k=S.ob;S.ob=[op];S.srv=proj(S.srv,today());S.rsrv=proj(S.rsrv,S.rd);S.ob=k;S.ver++}
 async function flush(){
- if(S.flushing||!S.ob.length||!navigator.onLine)return;S.flushing=true;
- while(S.ob.length){const op=S.ob.find(x=>x.t!=='sheet')||S.ob[0];
-  try{await runOp(op);if(op.t!=='sheet')commit(op);S.ob=S.ob.filter(x=>x!==op);saveOb();if(op.t!=='sheet'){project();render()}}
-  catch(e){if(isNet(e))break;
-   if(op.t==='sheet'){op.n=(op.n||0)+1;if(op.n>=5){S.ob=S.ob.filter(x=>x!==op);console.warn('sheet sync dibuang',e.message)}saveOb();break}
-   S.ob=S.ob.filter(x=>x!==op);saveOb();alert('Perubahan gagal disimpan: '+e.message)}}
- S.flushing=false;await loadOrders();if(S.view==='riwayat')await loadRiwayat();render()}
+ if(S.flushing||(!S.ob.length&&!S.ev.length)||!navigator.onLine)return;S.flushing=true;
+ try{
+  while(S.ob.length){
+   const op=S.ob.find(x=>x.t!=='sheet');
+   if(!op){await sleep(2500);if(S.ob.some(x=>x.t!=='sheet'))continue;
+    try{await flushSheets()}catch(e){break}
+    continue}
+   const grp=op.t==='flag'?takeFlags(op):[op];
+   try{await runOp(op,grp);grp.forEach(commit);S.ob=S.ob.filter(x=>!grp.includes(x));saveOb();project();render()}
+   catch(e){if(isNet(e))break;S.ob=S.ob.filter(x=>!grp.includes(x));saveOb();alert('Perubahan gagal disimpan: '+e.message)}}
+  try{await flushEv()}catch(e){}
+ }finally{S.flushing=false}
+ await loadOrders();if(S.view==='riwayat')await loadRiwayat();render()}
 const push=(...o)=>{S.ob.push(...o);saveOb();project();render();flush()};
 async function boot(){
+ render();
  const {data:{session}}=await sb.auth.getSession();
  if(session&&location.search.includes('code='))history.replaceState({},'',location.pathname);
  if(!session)return go('login');
@@ -199,7 +228,7 @@ async function boot(){
  S.menu=m.data||[];S.cash=c.data;LS('agl_menu',S.menu);
  if(!S.cash)return go('buka');
  if(S.cash.closed_at)return go('ditutup');
- await flush();await loadOrders();go('antrean')}
+ await loadOrders();go('antrean');flush()}
 function add(c,d){const it=S.cart[c]||(S.cart[c]={g:{},note:''}),g=it.g;
  if(d>0)g.default=(g.default||0)+1;else if(g.default>0)g.default--;else{const k=Object.keys(g).find(x=>g[x]>0);if(k)g[k]--}
  if(q(c)===0)delete S.cart[c]}
@@ -220,7 +249,7 @@ async function simpan(){
  const id=S.edit||crypto.randomUUID();
  const p={id,business_date:cur?cur.business_date:today(),order_type:f.tipe,online_service:f.tipe==='online'?f.svc:null,table_no:f.tipe==='dine_in'?(f.meja.trim()||null):null,customer_kind:f.untuk,staff_name:f.untuk==='staff'?(f.nama.trim()||null):null,general_note:f.umum.trim()||null,items};
  const rb=S.fromR;S.cart={};S.f=F0();S.edit=null;S.fromR=0;S.tab='aktif';S.view=rb?'riwayat':'antrean';
- S.ob.push({u:uid(),t:'save',p,at:new Date().toISOString(),hist:past?1:0});if(past)qd(p.business_date);else qs(id);saveOb();project();go(rb?'riwayat':'antrean');flush()}
+ S.ob.push({u:uid(),t:'save',p,at:new Date().toISOString(),hist:past?1:0});if(past)qd(p.business_date);else if(cur&&cur.is_done)qs(id);saveOb();project();go(rb?'riwayat':'antrean');flush()}
 async function editCash(field){
  const lab=field==='cash_start'?'Cash awal':'Cash akhir',old=S.cash[field];
  const v=await ask('Ubah '+lab,'Saat ini '+(old==null?'-':rp(old)),'Simpan',old==null?'':String(old),1);
@@ -283,7 +312,13 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
  if(t.id==='mi'&&d.num){const v=t.value.replace(/\D/g,'').slice(0,9);t.value=v?rp(v):''}else if(d.cash){const v=t.value.replace(/\D/g,'').slice(0,9);S[d.cash]=v;t.value=v?rp(v):''}else if(d.f)S.f[d.f]=t.value;else if(d.n)S.cart[d.n].note=t.value;else if(d.cn)S.cn.v=t.value;else if(d.rd)setRd(t.value)});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){S.cash=null;S.orders=[];S.role='';S.ro=[];S.rsrv=[];LS('agl_role',null);S.cart={};go('login')}});
-setInterval(async()=>{if(S.view==='antrean'&&!document.hidden&&!S.modal){await flush();if(!S.flushing){await loadOrders();render()}}},8000);
+let lastMk=0;
+setInterval(async()=>{if(S.view!=='antrean'||document.hidden||S.modal||S.flushing)return;
+ if(S.ob.length||S.ev.length){await flush();return}
+ await loadOrders();const mk=Math.floor(Date.now()/60000);if(S.chg||mk!==lastMk){lastMk=mk;render()}},8000);
+async function chkVer(){try{const t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text(),m=t.match(/const APP_V='([^']+)'/);
+ if(m&&m[1]!==APP_V&&S.view==='antrean'&&!S.ob.length&&!S.ev.length&&!S.modal&&!S.pot&&!S.cn&&!S.flushing)location.reload()}catch(e){}}
+setInterval(chkVer,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chkVer()});
 window.addEventListener('online',()=>flush());
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 boot();
